@@ -33,6 +33,22 @@ services:
       start_period: 180s
     networks:
       - poc_network
+      
+      
+  auditbeat:
+    image: docker.elastic.co/beats/auditbeat:7.12.1
+    cap_add:
+      - AUDIT_CONTROL
+      - AUDIT_READ
+    networks:
+      - poc_network
+    volumes:
+      - auditbeat:/usr/share/auditbeat/data
+      - /var/log:/var/log:ro
+    environment:
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-node1}
+      - KIBANA_HOST=${KIBANA_HOST:-node1}
+    command: ["--strict.perms=false"]
 
   # logstash:
   #   image: logstash:7.12.1
