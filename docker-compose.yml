@@ -113,6 +113,9 @@ services:
   #   networks:
   #     - poc_network
 
+volumes:
+  auditbeat: {}
+
 networks:
   poc_network:
     name: poc_network
