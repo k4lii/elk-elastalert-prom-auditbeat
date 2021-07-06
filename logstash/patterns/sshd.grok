@@ -1,0 +1,18 @@
+# sshd grok pattern
+
+# NORMAL log
+SSHD_SUCCESS (?<sshd_succes_result>Accepted) %{WORD:sshd_succes_type} for %{USERNAME:sshd_succes_user} from %{IP:sshd_succes_client_ip} port %{NUMBER:sshd_succes_port} %{WORD:sshd_succes_protocol}: %{GREEDYDATA:sshd_succes_cipher}
+SSHD_DISCONNECT Received disconnect from %{IP:sshd_disconnect_ip} port %{NUMBER:sshd_disconnect_port}:%{NUMBER:sshd_disconnect_code}: %{GREEDYDATA:sshd_disconnect_status}
+SSHD_SESSION_ELEVATION pam_unix\(%{DATA:sshd_session_elevation_type}:session\): session %{WORD:sshd_session_elevation_status} for user %{USERNAME:sshd_session_elevation_user_requested} by(?: %{USERNAME:sshd_session_elevation_user})?
+
+# ANALYSIS log
+SSHD_ACTIONS %{SYSLOGTIMESTAMP:sshd_action_timestamp} %{WORD:sshd_action_hostname} %{GREEDYDATA:sshd_action_user}:\s*%{GREEDYDATA:sshd_action_linux_user} :( %{GREEDYDATA:sshd_action_sudo_error} ;)? TTY=%{GREEDYDATA:sshd_action_tty} ; PWD=%{GREEDYDATA:sshd_action_pwd} ; USER=%{GREEDYDATA:sshd_action_user} ; COMMAND=%{GREEDYDATA:sshd_action_command}
+SSHD_INVALID_USER_FAIL Failed password for invalid user %{USERNAME:sshd_invalid_fail_user} from %{IP:sshd_invalid_fail_sshd_client_ip} port %{NUMBER:sshd_invalid_fail_sshd_port} ssh2(: %{GREEDYDATA:sshd_invalid_fail_ssh_signature})?
+SSHD_VALID_USER_FAIL Failed password for %{USERNAME:sshd_valid_fail_user} from %{IP:sshd_valid_fail_client_ip} port %{NUMBER:sshd_valid_fail_port} ssh2(: %{GREEDYDATA:sshd_valid_fail_signature})?
+SSHD_USERADD %{SYSLOGTIMESTAMP:sshd_useradd_timestamp} %{SYSLOGHOST:sshd_useradd_hostname} useradd(?:\[%{POSINT:sshd_useradd_pid}\])?: new user: name=%{GREEDYDATA:sshd_useradd_new_user_name}, UID=%{NUMBER:sshd_useradd_uid}, GID=%{NUMBER:sshd_useradd_gid}, home=%{GREEDYDATA:sshd_useradd_home}, shell=%{GREEDYDATA:sshd_useradd_shell}
+SSHD_GROUPADD %{SYSLOGTIMESTAMP:sshd_groupadd_timestamp} %{SYSLOGHOST:sshd_groupadd_hostname} groupadd(?:\[%{POSINT:sshd_groupadd_pid}\])?: new group: name=%{GREEDYDATA:sshd_groupadd_new_group}, GID=%{NUMBER:sshd_groupadd_gid}
+
+####
+SSHD_NORMAL_LOG %{SSHD_SUCCESS}|%{SSHD_DISCONNECT}|%{SSHD_SESSION_ELEVATION}
+SSHD_ANALYSIS_LOG %{SSHD_INVALID_USER_FAIL}|%{SSHD_VALID_USER_FAIL}|%{SSHD_ACTIONS}|%{SSHD_USERADD}|%{SSHD_GROUPADD}
+SSHD_LOG %{SSHD_NORMAL_LOG}|%{SSHD_ANALYSIS_LOG}

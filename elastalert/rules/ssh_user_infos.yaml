@@ -1,0 +1,23 @@
+#https://elastalert2.readthedocs.io/en/latest/ruletypes.html#rule-types -> Rule Types and Configuration Options
+#https://github.com/jertel/elastalert2/tree/master/examples/rules-> example rules for elastalert2
+
+name: "report-cve user_infos alert"
+type: any
+index: logstash
+
+# Exemple query
+filter:
+- query:
+    query_string:
+      query: "sshd_action_command.keyword : \"/bin/cat /etc/passwd\""
+
+alert_text: "User try to check users infos\n"
+# (Required)
+# The alert is use when a match is found
+alert:
+  - "ms_teams"
+ms_teams_webhook_url: "https://inovasoftwaresa.webhook.office.com/webhookb2/b83676f6-f117-4692-8485-c182b60b0ce9@9978370c-eda9-4fa6-b08f-02178d9c5bef/IncomingWebhook/4a62837646af4d21a60179d09107ff15/c6d2b68b-02e8-4780-abb0-9976a115d7e2"
+#optional
+ms_teams_alert_summary: "Alert"
+ms_teams_theme_color: "#6600ff"
+ms_teams_alert_fixed_width: True

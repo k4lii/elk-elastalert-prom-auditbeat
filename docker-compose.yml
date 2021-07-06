@@ -1,0 +1,103 @@
+version: '3.7'
+
+services:
+  # filebeat:
+  #   container_name: filebeat
+  #   build:
+  #     context: ./filebeat/
+  #   volumes:
+  #     - ./filebeat/logs:/home/logs
+  #   depends_on:
+  #     - logstash
+  #   networks:
+  #     - poc_network
+
+  elasticsearch:
+    user: "1000"
+    image: elasticsearch:7.12.1
+    container_name: elasticsearch
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 180s
+    networks:
+      - poc_network
+
+  # logstash:
+  #   image: logstash:7.12.1
+  #   volumes:
+  #     - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+  #     - ./logstash/pipeline:/usr/share/logstash/pipeline
+  #     - ./logstash/patterns:/home/patterns
+  #   ports:
+  #     - "5044:5044"
+  #     - "5000:5000/tcp"
+  #     - "5000:5000/udp"
+  #     - "9600:9600"
+  #   environment:
+  #     LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+  #   container_name: logstash
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - poc_network
+
+  kibana:
+    build:
+      context: ./kibana/
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - "5601:5601"
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 200s
+    networks:
+      - poc_network
+    
+  # elastalert: # se lance trop vite par rapport à logstash(donc crash 1fois et se relance correctement)
+  #   image: jertel/elastalert2 #https://elastalert2.readthedocs.io/en/latest/
+  #   volumes:
+  #     - ./elastalert/config/elastalert.yaml:/opt/elastalert/config.yaml
+  #     - ./elastalert/rules/:/opt/elastalert/rules
+  #   container_name: elastalert
+  #   restart: always
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - poc_network
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   ports:
+  #     - "3000:3000"
+  #   user: "0"
+  #   volumes:
+  #     - ./grafanabuild/data:/var/lib/grafana
+  #     - ./grafanabuild/provisioning/:/etc/grafana/provisioning:Z
+  #   restart: always
+  #   networks:
+  #     - poc_network
+
+networks:
+  poc_network:
+    name: poc_network
+    driver: bridge
