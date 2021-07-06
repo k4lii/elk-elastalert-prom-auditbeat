@@ -35,39 +35,47 @@ services:
 #       - poc_network
       
       
-#   auditbeat:
-#     image: docker.elastic.co/beats/auditbeat:7.12.1
-#     cap_add:
-#       - AUDIT_CONTROL
-#       - AUDIT_READ
+  auditbeat:
+    image: docker.elastic.co/beats/auditbeat:7.12.1
+    # Need to override user so we can access the log files, and docker.sock
+    user: root
+    # https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html#_special_requirements
+    # PID and CAP_ADD options are ignored as they are Not yet available in swarm mode at the moment.
+    # Eagerly waiting for Docker 19.06 release which will bring --privileged flag to Docker
+    # Swarm Mode https://github.com/moby/moby/issues/24862#issuecomment-451594187
+    # support for capabilities https://github.com/moby/moby/pull/38380
+    pid: host
+    cap_add:
+      - AUDIT_CONTROL
+      - AUDIT_READ
+    volumes:
+      - auditbeat:/usr/share/auditbeat/data
+      - /var/log:/var/log:ro
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+      - KIBANA_HOST=kibana:5601
+    networks:
+      - poc_network
+    command: ["--strict.perms=false"]
+
+#   logstash:
+#     image: logstash:7.12.1
+#     volumes:
+#       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+#       - ./logstash/pipeline:/usr/share/logstash/pipeline
+#       - ./logstash/patterns:/home/patterns
+#     ports:
+#       - "5044:5044"
+#       - "5000:5000/tcp"
+#       - "5000:5000/udp"
+#       - "9600:9600"
+#     environment:
+#       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+#     container_name: logstash
+#     depends_on:
+#       - elasticsearch
 #     networks:
 #       - poc_network
-#     volumes:
-#       - auditbeat:/usr/share/auditbeat/data
-#       - /var/log:/var/log:ro
-#     environment:
-#       - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-node1}
-#       - KIBANA_HOST=${KIBANA_HOST:-node1}
-#     command: ["--strict.perms=false"]
-
-  # logstash:
-  #   image: logstash:7.12.1
-  #   volumes:
-  #     - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
-  #     - ./logstash/pipeline:/usr/share/logstash/pipeline
-  #     - ./logstash/patterns:/home/patterns
-  #   ports:
-  #     - "5044:5044"
-  #     - "5000:5000/tcp"
-  #     - "5000:5000/udp"
-  #     - "9600:9600"
-  #   environment:
-  #     LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-  #   container_name: logstash
-  #   depends_on:
-  #     - elasticsearch
-  #   networks:
-  #     - poc_network
 
   kibana:
     build:
@@ -85,8 +93,8 @@ services:
       timeout: 15s
       retries: 3
       start_period: 200s
-#     networks:
-#       - poc_network
+    networks:
+      - poc_network
     
   # elastalert: # se lance trop vite par rapport à logstash(donc crash 1fois et se relance correctement)
   #   image: jertel/elastalert2 #https://elastalert2.readthedocs.io/en/latest/
@@ -113,10 +121,15 @@ services:
   #   networks:
   #     - poc_network
 
-# volumes:
-#   auditbeat: {}
+volumes:
+  auditbeat:
 
-# networks:
-#   poc_network:
-#     name: poc_network
-#     driver: bridge
+# configs:
+#   ab_config:
+#     file: $PWD/elk/beats/auditbeat/config/auditbeat.yml
+
+networks:
+  poc_network:
+    name: poc_network
+    driver: bridge
+
