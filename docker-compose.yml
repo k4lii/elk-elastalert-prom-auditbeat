@@ -31,12 +31,12 @@ services:
       timeout: 15s
       retries: 3
       start_period: 180s
-#     networks:
-#       - poc_network
-      
-      
+    networks:
+      - poc_network
+
   auditbeat:
     image: docker.elastic.co/beats/auditbeat:7.12.1
+    container_name: auditbeat
     # Need to override user so we can access the log files, and docker.sock
     user: root
     # https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html#_special_requirements
@@ -49,14 +49,20 @@ services:
       - AUDIT_CONTROL
       - AUDIT_READ
     volumes:
+      - ./auditbeat/rules_folder:/usr/share/auditbeat/rules_folder
+      - ./auditbeat/auditbeat.yml:/usr/share/auditbeat/auditbeat.yml
       - auditbeat:/usr/share/auditbeat/data
       - /var/log:/var/log:ro
     environment:
       - ELASTICSEARCH_HOST=elasticsearch:9200
       - KIBANA_HOST=kibana:5601
+      - TINI_SUBREAPER=true
     networks:
       - poc_network
     command: ["--strict.perms=false"]
+    depends_on:
+       - elasticsearch
+       - kibana
 
 #   logstash:
 #     image: logstash:7.12.1
@@ -132,4 +138,3 @@ networks:
   poc_network:
     name: poc_network
     driver: bridge
-

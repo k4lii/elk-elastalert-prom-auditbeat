@@ -19,3 +19,6 @@
 |  Password failure for invalid/valid users | [FREQUENCY ALERT] sshd_valid_fail_user.keyword:* or sshd_invalid_fail_user.keyword:* |
 | Création de users/groups | sshd_useradd_new_user_name.keyword:* or sshd_groupadd_new_group.keyword:* |
 | Supression /ect/passwd | sshd_action_command.keyword : \"/bin/cat /etc/passwd\" |
+
+##audibeat
+Don’t forget to change the owner of auditbeat.yml file to root (uid=1000).
